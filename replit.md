@@ -103,4 +103,10 @@ Preferred communication style: Simple, everyday language.
 ## Changelog
 
 Changelog:
-- June 24, 2025. Initial setup
+- June 24, 2025: Initial setup with full-stack referral link management system
+- June 24, 2025: Added dark neon theme with glowing UI elements
+- June 24, 2025: Implemented promo calendar for time-sensitive casino promotions
+- June 24, 2025: Added automatic affiliate link detection and Telegram integration
+- June 24, 2025: Created comprehensive deployment package for dedicated hosting
+- June 24, 2025: Added database seeding with all GambleCodez referral links
+- June 24, 2025: Prepared production-ready build with Docker and nginx configs
