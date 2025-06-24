@@ -2,27 +2,25 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupSimpleAuth, isAuthenticated as simpleIsAuthenticated } from "./simpleAuth";
 import { insertLinkSchema, updateLinkSchema, insertPromoEventSchema, updatePromoEventSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
+  // Auth middleware - choose based on environment variable
+  const authProvider = process.env.AUTH_PROVIDER || "replit";
+  
+  let authMiddleware = isAuthenticated;
+  
+  if (authProvider === "simple") {
+    await setupSimpleAuth(app);
+    authMiddleware = simpleIsAuthenticated;
+  } else {
+    await setupAuth(app);
+    authMiddleware = isAuthenticated;
+  }
 
-  // Auth routes
-  app.get('/api/auth/user', async (req: any, res) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  // Auth routes (handled by auth provider setup above)
 
   // Public routes
   app.get('/api/links', async (req, res) => {
@@ -58,7 +56,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Protected admin routes
-  app.get('/api/admin/stats', isAuthenticated, async (req, res) => {
+  app.get('/api/admin/stats', authMiddleware, async (req, res) => {
     try {
       const stats = await storage.getLinkStats();
       res.json(stats);
@@ -68,7 +66,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/links', isAuthenticated, async (req, res) => {
+  app.post('/api/admin/links', authMiddleware, async (req, res) => {
     try {
       const linkData = insertLinkSchema.parse(req.body);
       const link = await storage.createLink(linkData);
@@ -82,7 +80,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/admin/links/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/admin/links/:id', authMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const linkData = updateLinkSchema.parse(req.body);
@@ -97,7 +95,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/admin/links/:id', isAuthenticated, async (req, res) => {
+  app.delete('/api/admin/links/:id', authMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.deleteLink(id);
@@ -109,7 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Promo Events routes
-  app.get('/api/admin/promo-events', isAuthenticated, async (req, res) => {
+  app.get('/api/admin/promo-events', authMiddleware, async (req, res) => {
     try {
       const dateStr = req.query.date as string;
       const date = dateStr ? new Date(dateStr) : undefined;
@@ -121,7 +119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/promo-events/active', isAuthenticated, async (req, res) => {
+  app.get('/api/admin/promo-events/active', authMiddleware, async (req, res) => {
     try {
       const events = await storage.getActivePromoEvents();
       res.json(events);
@@ -131,7 +129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/promo-events', isAuthenticated, async (req, res) => {
+  app.post('/api/admin/promo-events', authMiddleware, async (req, res) => {
     try {
       const eventData = insertPromoEventSchema.parse(req.body);
       const event = await storage.createPromoEvent(eventData);
@@ -145,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/admin/promo-events/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/admin/promo-events/:id', authMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const eventData = updatePromoEventSchema.parse(req.body);
@@ -160,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/admin/promo-events/:id', isAuthenticated, async (req, res) => {
+  app.delete('/api/admin/promo-events/:id', authMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.deletePromoEvent(id);

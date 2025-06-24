@@ -160,7 +160,10 @@ export default function Admin() {
             </div>
             <div className="flex items-center space-x-4">
               <Button 
-                onClick={() => window.location.href = '/api/logout'}
+                onClick={() => {
+                  fetch('/api/auth/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/');
+                }}
                 variant="ghost" 
                 size="sm"
                 className="neon-text neon-glow-orange"
@@ -397,6 +400,8 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 

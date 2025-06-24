@@ -13,7 +13,7 @@ export default function Landing() {
             </div>
             <div className="flex items-center">
               <Button 
-                onClick={() => window.location.href = '/api/login'}
+                onClick={() => window.location.href = '/login'}
                 className="neon-border neon-glow-cyan bg-transparent"
               >
                 Admin Login

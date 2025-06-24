@@ -62,7 +62,10 @@ export default function Home() {
                 </Button>
               </Link>
               <Button 
-                onClick={() => window.location.href = '/api/logout'}
+                onClick={() => {
+                  fetch('/api/auth/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/');
+                }}
                 variant="ghost" 
                 size="sm"
                 className="neon-text neon-glow-orange"
