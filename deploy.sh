@@ -1,86 +1,57 @@
 #!/bin/bash
 
-# GambleCodez Deployment Script
-echo "🎰 Deploying GambleCodez..."
+# 🎰 GambleCodez Fly.io Deployment Script
+echo "🚀 Deploying GambleCodez to Fly.io..."
 
 # Exit on any error
 set -e
 
-# Colors for output
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Check if Node.js is installed
+# ✅ Check Node.js
 if ! command -v node &> /dev/null; then
-    echo -e "${RED}Node.js is not installed. Please install Node.js 20+ first.${NC}"
+    echo -e "${RED}Node.js not found. Install Node.js 20+ before deploying.${NC}"
     exit 1
 fi
 
-# Check Node.js version
+# ✅ Check Node.js version
 NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
 if [ "$NODE_VERSION" -lt 18 ]; then
-    echo -e "${RED}Node.js version 18+ is required. Current version: $(node -v)${NC}"
+    echo -e "${RED}Node.js version 18+ is required. Found: $(node -v)${NC}"
     exit 1
 fi
 
-echo -e "${GREEN}✅ Node.js version check passed${NC}"
+echo -e "${GREEN}✅ Node.js version $(node -v) OK${NC}"
 
-# Check if .env file exists
-if [ ! -f .env ]; then
-    echo -e "${YELLOW}⚠️  .env file not found. Creating from template...${NC}"
-    cp .env.example .env
-    echo -e "${RED}Please edit .env file with your configuration before continuing.${NC}"
-    exit 1
-fi
-
-echo -e "${GREEN}✅ Environment file found${NC}"
-
-# Install dependencies
-echo -e "${YELLOW}📦 Installing dependencies...${NC}"
+# ✅ Install dependencies
+echo -e "${YELLOW}📦 Installing production dependencies...${NC}"
 npm ci --only=production
 
-# Build the application
-echo -e "${YELLOW}🔨 Building application...${NC}"
+# ✅ Build app
+echo -e "${YELLOW}🔨 Building the application...${NC}"
 npm run build
 
-# Check if DATABASE_URL is set
-if ! grep -q "DATABASE_URL=" .env || grep -q "DATABASE_URL=\"\"" .env; then
-    echo -e "${RED}❌ DATABASE_URL not configured in .env file${NC}"
+# ✅ Run DB migrations if Drizzle is used
+echo -e "${YELLOW}🗃️  Running database migrations...${NC}"
+npm run db:push || {
+    echo -e "${RED}❌ Drizzle migration failed. Check database config.${NC}"
     exit 1
-fi
+}
 
-# Run database migrations
-echo -e "${YELLOW}🗄️  Running database migrations...${NC}"
-npm run db:push
+echo -e "${GREEN}✅ DB migration complete${NC}"
 
-echo -e "${GREEN}✅ Database setup complete${NC}"
-
-# Check if PM2 is installed for production
-if command -v pm2 &> /dev/null; then
-    echo -e "${YELLOW}🚀 Starting application with PM2...${NC}"
-    pm2 stop gamblecodez 2>/dev/null || true
-    pm2 delete gamblecodez 2>/dev/null || true
-    pm2 start npm --name "gamblecodez" -- start
-    pm2 save
-    echo -e "${GREEN}✅ Application started with PM2${NC}"
-else
-    echo -e "${YELLOW}⚠️  PM2 not found. Install with: npm install -g pm2${NC}"
-    echo -e "${YELLOW}🚀 Starting application...${NC}"
-    npm start &
-    echo -e "${GREEN}✅ Application started${NC}"
-fi
+# ✅ Deploy to Fly
+echo -e "${YELLOW}✈️ Deploying via Fly.io...${NC}"
+flyctl deploy --config fly.toml || {
+    echo -e "${RED}❌ Fly.io deployment failed.${NC}"
+    exit 1
+}
 
 echo ""
-echo -e "${GREEN}🎉 Deployment complete!${NC}"
-echo -e "${GREEN}🌐 Application should be running on port 3000${NC}"
-echo -e "${GREEN}🔗 Access your admin panel at: http://localhost:3000${NC}"
+echo -e "${GREEN}🎉 Fly.io deployment successful!${NC}"
+echo -e "${GREEN}🔗 App live at: https://$(grep -m1 'app =' fly.toml | awk '{print $3}' | tr -d '"' ).fly.dev${NC}"
 echo ""
-echo -e "${YELLOW}Next steps:${NC}"
-echo "1. Configure your reverse proxy (nginx/apache)"
-echo "2. Set up SSL certificates"
-echo "3. Configure domain in Replit console"
-echo "4. Test the application"
-echo ""
-echo -e "${GREEN}📖 Check README.md for detailed setup instructions${NC}"
