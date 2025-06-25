@@ -1,21 +1,21 @@
 #!/bin/bash
 
-# GambleCodez Deployment Package Creator
-echo "📦 Creating deployment package for GambleCodez..."
+# 🎰 GambleCodez - Fly.io Deployment Packager
+echo "📦 Creating Fly.io deployment package..."
 
-# Create deployment directory
+# Define deployment directory
 DEPLOY_DIR="gamblecodez-deployment"
 rm -rf $DEPLOY_DIR
 mkdir $DEPLOY_DIR
 
-# Copy source files
-echo "📂 Copying source files..."
+# 📂 Copy source directories
+echo "📂 Copying app source..."
 cp -r client $DEPLOY_DIR/
 cp -r server $DEPLOY_DIR/
 cp -r shared $DEPLOY_DIR/
 
-# Copy configuration files
-echo "⚙️ Copying configuration files..."
+# ⚙️ Copy core configuration and build files
+echo "⚙️ Copying config files..."
 cp package.json $DEPLOY_DIR/
 cp package-lock.json $DEPLOY_DIR/
 cp tsconfig.json $DEPLOY_DIR/
@@ -25,45 +25,28 @@ cp postcss.config.js $DEPLOY_DIR/
 cp components.json $DEPLOY_DIR/
 cp drizzle.config.ts $DEPLOY_DIR/
 
-# Copy deployment files
-echo "🚀 Copying deployment files..."
-cp README.md $DEPLOY_DIR/
-cp .env.example $DEPLOY_DIR/
+# 🚀 Copy deployment-specific files
+echo "🚀 Copying deploy files..."
 cp Dockerfile $DEPLOY_DIR/
 cp docker-compose.yml $DEPLOY_DIR/
 cp fly.toml $DEPLOY_DIR/
 cp nginx.conf $DEPLOY_DIR/
 cp deploy.sh $DEPLOY_DIR/
 cp init.sql $DEPLOY_DIR/
+cp README.md $DEPLOY_DIR/
 
-# Copy .gitignore
-cp .gitignore $DEPLOY_DIR/
+# ⛔ No .env creation — use Fly Secrets
+echo "🔐 Skipping .env generation (Fly.io secrets used)"
 
-# Create production .env template
-cat > $DEPLOY_DIR/.env << EOF
-# Database Configuration
-DATABASE_URL="postgresql://username:password@host:port/database"
-
-# Replit Authentication (Required)
-REPLIT_DOMAINS="your-domain.com"
-REPL_ID="your-repl-id-from-replit-console"
-SESSION_SECRET="$(openssl rand -base64 32)"
-ISSUER_URL="https://replit.com/oidc"
-
-# Server Configuration
-NODE_ENV="production"
-PORT=3000
-EOF
-
-# Create archive
-echo "📦 Creating deployment archive..."
+# 🔥 Archive the deployment
+echo "📦 Creating archive..."
 tar -czf gamblecodez-deployment.tar.gz $DEPLOY_DIR
 
-echo "✅ Deployment package created successfully!"
-echo "📁 Package location: gamblecodez-deployment.tar.gz"
-echo "📂 Extracted files: $DEPLOY_DIR/"
+# ✅ Done
+echo "✅ Deployment package created!"
+echo "📁 Archive: gamblecodez-deployment.tar.gz"
+echo "📂 Folder:  $DEPLOY_DIR"
 echo ""
-echo "🚀 Upload to your server and run:"
-echo "   tar -xzf gamblecodez-deployment.tar.gz"
-echo "   cd gamblecodez-deployment"
-echo "   ./deploy.sh"
+echo "🚀 To deploy to Fly.io:"
+echo "   cd $DEPLOY_DIR"
+echo "   flyctl deploy --config fly.toml"
