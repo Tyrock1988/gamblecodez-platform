@@ -2,7 +2,7 @@ app = "gamblecodez-platform"
 primary_region = "iad" # or your closest Fly.io region
 
 [build]
-  builder = "heroku/buildpacks:20" # OR see step 4 if using Docker
+  builder = "heroku/buildpacks:22" # OR see step 4 if using Docker
 
 [[services]]
   http_checks = []
