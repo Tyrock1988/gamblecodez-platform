@@ -2,51 +2,51 @@
 
 set -e
 
-# Your Huggingface token here (keep private!)
-HF_TOKEN="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"
+# Requires HF_TOKEN to be exported in environment or passed in manually
+if [[ -z "$HF_TOKEN" ]]; then
+  echo "❌ Error: HF_TOKEN is not set."
+  echo "You must export it before running this script:"
+  echo "  export HF_TOKEN=your_huggingface_token_here"
+  exit 1
+fi
 
-# Repo SSH URL
 REPO_SSH="git@github.com:Tyrock1988/gamblecodez-platform.git"
-
-# Llamafile download URL (protected by HF token)
 MODEL_URL="https://huggingface.co/jartine/llamafile/resolve/main/llamafile-aarch64"
-
-# Model filename (you must add your model manually or update MODEL_URL)
 MODEL_FILE="model.gguf"
 
-# Install required packages if missing
+# Install dependencies
 for cmd in git wget curl tar; do
-  if ! command -v $cmd &> /dev/null; then
+  if ! command -v $cmd &>/dev/null; then
     echo "Installing $cmd..."
-    pkg install -y $cmd || apt-get install -y $cmd || { echo "Please install $cmd manually"; exit 1; }
+    pkg install -y $cmd || apt install -y $cmd || echo "Install $cmd manually if that fails"
   fi
 done
 
-echo "Cloning your repo..."
+echo "📦 Cloning your repo..."
 if [ ! -d "gamblecodez-platform" ]; then
   git clone "$REPO_SSH"
 else
-  echo "Repo already cloned."
+  echo "✅ Repo already cloned."
 fi
 
 cd gamblecodez-platform
 
-echo "Downloading llamafile binary..."
+echo "📥 Downloading llamafile binary..."
 if [ ! -f "./llamafile" ]; then
   wget --header="Authorization: Bearer $HF_TOKEN" \
     "$MODEL_URL" -O llamafile
   chmod +x llamafile
 else
-  echo "llamafile binary exists."
+  echo "✅ llamafile binary exists."
 fi
 
-echo "Checking for model file ($MODEL_FILE)..."
+echo "📁 Checking for model file ($MODEL_FILE)..."
 if [ ! -f "$MODEL_FILE" ]; then
   echo "⚠️  Model file ($MODEL_FILE) not found."
-  echo "Please download your model file manually and place it here."
+  echo "Please download and place your model file here."
 fi
 
-echo "Creating AI + Git assistant wrapper script..."
+echo "⚙️ Creating AI + Git assistant wrapper..."
 
 cat > llama-git-assistant.sh << 'EOF'
 #!/bin/bash
@@ -66,54 +66,52 @@ function chat() {
 }
 
 function ai_fix_code() {
-  read -rp "Enter relative path to code file to fix (e.g. client/src/pages/Home.tsx): " file_path
+  read -rp "Enter relative path to code file to fix: " file_path
   if [[ ! -f "$file_path" ]]; then
-    echo "File not found: $file_path"
+    echo "❌ File not found: $file_path"
     return
   fi
 
-  echo "Fixing $file_path with AI..."
+  echo "🧠 Fixing $file_path with AI..."
   code_content=$(cat "$file_path")
   prompt="You are a senior full-stack developer. Fix and improve the following code:\n\n$code_content"
   fixed_code=$(echo -e "$prompt" | $LLAMA -m "$MODEL_PATH")
 
   if [[ -z "$fixed_code" ]]; then
-    echo "AI returned no output. Skipping."
+    echo "❌ AI returned no output."
     return
   fi
 
   cp "$file_path" "$file_path.bak"
   echo "$fixed_code" > "$file_path"
-  echo "File fixed and saved: $file_path"
-  echo "Backup created: $file_path.bak"
+  echo "✅ File fixed and saved. Backup at $file_path.bak"
 }
 
 function git_pull() {
-  echo "Pulling latest from origin..."
+  echo "📥 Pulling latest changes..."
   git pull origin main || git pull origin master
 }
 
 function git_commit_push() {
-  read -rp "Files to git add (space-separated, or '.' for all): " files
+  read -rp "Files to git add (or '.' for all): " files
   read -rp "Commit message: " msg
-
   git add $files
   git commit -m "$msg"
   git push origin main || git push origin master
 }
 
 function fly_deploy() {
-  echo "Deploying to Fly.io..."
+  echo "🚀 Deploying to Fly.io..."
   fly deploy
 }
 
 function show_menu() {
   clear
-  echo "=== GambleCodez AI + Git Workflow ==="
+  echo "=== 🎰 GambleCodez AI + Git Menu ==="
   echo "1) Chat with AI"
   echo "2) AI fix a code file"
-  echo "3) Git pull latest"
-  echo "4) Git add, commit & push"
+  echo "3) Git pull"
+  echo "4) Git commit & push"
   echo "5) Deploy to Fly.io"
   echo "6) Exit"
   echo ""
@@ -124,12 +122,12 @@ while true; do
   read -rp "Choose an option [1-6]: " choice
   case $choice in
     1) chat ;;
-    2) ai_fix_code; read -rp "Press Enter to continue..." ;;
-    3) git_pull; read -rp "Press Enter to continue..." ;;
-    4) git_commit_push; read -rp "Press Enter to continue..." ;;
-    5) fly_deploy; read -rp "Press Enter to continue..." ;;
-    6) echo "Bye!"; exit 0 ;;
-    *) echo "Invalid option. Try again." ;;
+    2) ai_fix_code; read -rp "Press Enter..." ;;
+    3) git_pull; read -rp "Press Enter..." ;;
+    4) git_commit_push; read -rp "Press Enter..." ;;
+    5) fly_deploy; read -rp "Press Enter..." ;;
+    6) echo "👋 Bye!"; exit 0 ;;
+    *) echo "❌ Invalid option." ;;
   esac
 done
 EOF
@@ -137,4 +135,4 @@ EOF
 chmod +x llama-git-assistant.sh
 
 echo "✅ Setup complete!"
-echo "Run './llama-git-assistant.sh' inside the repo directory to start your AI + Git assistant."
+echo "Run './llama-git-assistant.sh' inside the repo directory to begin."
