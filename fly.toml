@@ -1,24 +1,23 @@
 app = "gamblecodez-platform"
-primary_region = "iad" # or pick closest region to your audience
+primary_region = "iad" # or your closest Fly.io region
 
 [build]
-builder = "heroku/buildpacks:20" # or comment this if using Dockerfile
-
-[env]
-PORT = "8080"
+  builder = "heroku/buildpacks:20" # OR see step 4 if using Docker
 
 [[services]]
-internal_port = 8080
-protocol = "tcp"
+  http_checks = []
+  internal_port = 3000
+  processes = ["app"]
+  protocol = "tcp"
+
+  [services.concurrency]
+    hard_limit = 25
+    soft_limit = 20
 
   [[services.ports]]
-  port = 80
-  handlers = ["http"]
+    handlers = ["http"]
+    port = 80
 
   [[services.ports]]
-  port = 443
-  handlers = ["tls", "http"]
-
-  [[services.tcp_checks]]
-  interval = "10s"
-  timeout = "2s"
+    handlers = ["tls", "http"]
+    port = 443
