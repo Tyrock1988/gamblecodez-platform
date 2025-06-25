@@ -1,4 +1,4 @@
-app = "gamblecodez"
+app = "gamblecodez-platform"
 primary_region = "iad"
 
 [build]
