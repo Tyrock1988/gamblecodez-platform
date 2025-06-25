@@ -1,13 +1,24 @@
 app = "gamblecodez-platform"
-primary_region = "iad"
+primary_region = "iad" # or pick closest region to your audience
 
-[build]  # ← only this one
+[build]
+builder = "heroku/buildpacks:20" # or comment this if using Dockerfile
 
 [env]
-  NODE_ENV = "production"
+PORT = "8080"
 
-[http_service]
-  internal_port = 3000
-  force_https = true
-  auto_start_machines = true
-  auto_stop_machines = true
+[[services]]
+internal_port = 8080
+protocol = "tcp"
+
+  [[services.ports]]
+  port = 80
+  handlers = ["http"]
+
+  [[services.ports]]
+  port = 443
+  handlers = ["tls", "http"]
+
+  [[services.tcp_checks]]
+  interval = "10s"
+  timeout = "2s"
