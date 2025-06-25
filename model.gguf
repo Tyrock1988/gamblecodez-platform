@@ -1,0 +1,53 @@
+#!/bin/bash
+
+set -e
+
+# Ensure token exists
+if [ -z "$HF_TOKEN" ]; then
+  echo "❌ HF_TOKEN not found. Run: export HF_TOKEN=your_token"
+  exit 1
+fi
+
+echo "📥 Select a model to download:"
+echo "1) TinyLlama (1.1B, Q4_K_M) — fastest"
+echo "2) CodeLlama 7B (Q4_K_M) — best quality"
+echo "3) Phi-2 (2.7B, Q4_K_M) — balance of size & IQ"
+echo "4) Mistral 7B (Q4_K_M) — chat-style general model"
+echo "5) Cancel"
+
+read -rp "Enter a number [1-5]: " choice
+
+case "$choice" in
+  1)
+    MODEL_NAME="TinyLlama/TinyLlama-1.1B-Chat-v1.0-GGUF"
+    FILE="tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
+    ;;
+  2)
+    MODEL_NAME="TheBloke/CodeLlama-7B-Instruct-GGUF"
+    FILE="codellama-7b-instruct.Q4_K_M.gguf"
+    ;;
+  3)
+    MODEL_NAME="TheBloke/phi-2-GGUF"
+    FILE="phi-2.Q4_K_M.gguf"
+    ;;
+  4)
+    MODEL_NAME="TheBloke/Mistral-7B-Instruct-v0.1-GGUF"
+    FILE="mistral-7b-instruct-v0.1.Q4_K_M.gguf"
+    ;;
+  5)
+    echo "❌ Cancelled."
+    exit 0
+    ;;
+  *)
+    echo "❌ Invalid choice"
+    exit 1
+    ;;
+esac
+
+echo "🔗 Downloading $FILE from $MODEL_NAME..."
+
+wget --header="Authorization: Bearer $HF_TOKEN" \
+  "https://huggingface.co/$MODEL_NAME/resolve/main/$FILE" \
+  -O model.gguf
+
+echo "✅ model.gguf downloaded successfully!"
